@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StressType — Deteksi Stres dari Pola Ketikan</title>
+  <link href="typing.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    StressType
+  </div>
+  <div class="header-status">
+    <div class="dot-status" id="statusDot"></div>
+    <span id="statusText">Menunggu ketikan...</span>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main>
+  <div class="editor-panel">
+
+    <!-- Teks Referensi -->
+    <div class="reference-section">
+      <div class="section-label">Teks yang harus diketik ulang</div>
+      <!-- FIX: id="refText" kosong, diisi oleh JS -->
+      <div class="reference-text" id="refText"></div>
+    </div>
+
+    <!-- Area Ketik -->
+    <div class="typing-section">
+      <div class="typing-label-row">
+        <div class="section-label" style="margin:0">Area ketikan</div>
+      </div>
+
+      <textarea
+        id="typingArea"
+        placeholder="Mulai mengetik teks di atas di sini..."
+        spellcheck="false"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+      ></textarea>
+
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressBar"></div>
+      </div>
+
+      <div class="bottom-row">
+        <div class="stats-row">
+          <div class="stat-chip">Ketukan: <b id="keyCount">0</b></div>
+          <div class="stat-chip">Hold avg: <b id="holdAvg">—</b> ms</div>
+          <div class="stat-chip">Flight avg: <b id="flightAvg">—</b> ms</div>
+          <!-- <div class="stat-chip">Kecepatan: <b id="typingSpeed">0</b> k/m</div> -->
+        </div>
+
+        <!-- Tombol Lihat Hasil -->
+        <div class="question-footer">
+          <button class="btn-result" id="btnResult" disabled onclick="finishTyping()">
+            Cek Hasil →
+          </button>
+        </div>  
+      </div>
+      
+    </div>
+  </div>
+</main>
+
+<script src="scriptApp.js"></script>
+</body>
+</html>

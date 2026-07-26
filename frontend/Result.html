@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StressType — Hasil Deteksi</title>
+  <link rel="stylesheet" href="result.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    StressType
+  </div>
+  <div class="header-status">
+    <div class="dot-status" id="statusDot"></div>
+    <span id="statusText">Sesi selesai</span>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="result-main">
+
+  <!-- KOLOM KIRI -->
+  <div class="result-left">
+
+    <!-- Kartu Hasil Utama -->
+    <div class="result-card" id="resultCard">
+      <div class="result-icon" id="resultIcon">⏳</div>
+      <div class="result-label" id="resultLabel">Memuat...</div>
+      <div class="result-sub"   id="resultSub">Mengambil data sesi</div>
+    </div>
+
+    <!-- Metrik 9 fitur model + Akurasi + probabilitas -->
+    <div class="section-label" style="margin-top:24px;">Metrik Ketikan</div>
+    <div class="metric-grid">
+
+       <!-- 1. total_keystrokes -->
+      <div class="metric-box">
+        <div class="metric-name">TOTAL KETUKAN</div>
+        <div class="metric-val" id="mKeyCount">—</div>
+        <div class="metric-desc">Jumlah tombol yang ditekan</div>
+      </div>
+ 
+      <!-- 2. backspace_count -->
+      <div class="metric-box">
+        <div class="metric-name">JUMLAH BACKSPACE</div>
+        <div class="metric-val" id="mBackspace">
+          —<span class="metric-unit">kali</span>
+        </div>
+        <div class="metric-desc">Frekuensi koreksi saat mengetik</div>
+      </div>
+ 
+      <!-- 3. backspace_ratio -->
+      <div class="metric-box">
+        <div class="metric-name">RASIO BACKSPACE</div>
+        <div class="metric-val" id="mBsRatio">
+          —<span class="metric-unit">%</span>
+        </div>
+        <div class="metric-desc">Proporsi koreksi dari total ketukan</div>
+      </div>
+ 
+      <!-- 4. hold_time_mean -->
+      <div class="metric-box">
+        <div class="metric-name">HOLD TIME AVG</div>
+        <div class="metric-val" id="mHold">
+          —<span class="metric-unit">ms</span>
+        </div>
+        <div class="metric-desc">Rata-rata durasi tombol ditekan</div>
+      </div>
+ 
+      <!-- 5. hold_time_std -->
+      <!-- <div class="metric-box">
+        <div class="metric-name">HOLD TIME STD</div>
+        <div class="metric-val" id="mHoldStd">
+          —<span class="metric-unit">ms</span>
+        </div>
+        <div class="metric-desc">Standar deviasi hold time</div>
+      </div> -->
+ 
+      <!-- 6. flight_time_mean -->
+      <div class="metric-box">
+        <div class="metric-name">FLIGHT TIME AVG</div>
+        <div class="metric-val" id="mFlight">
+          —<span class="metric-unit">ms</span>
+        </div>
+        <div class="metric-desc">Rata-rata jeda antar ketukan</div>
+      </div>
+ 
+      <!-- 7. flight_time_std -->
+      <!-- <div class="metric-box">
+        <div class="metric-name">FLIGHT TIME STD</div>
+        <div class="metric-val" id="mFlightStd">
+          —<span class="metric-unit">ms</span>
+        </div>
+        <div class="metric-desc">Standar deviasi jeda antar ketukan</div>
+      </div> -->
+ 
+      <!-- 8. total_inact_duration -->
+      <div class="metric-box">
+        <div class="metric-name">DURASI INAKTIF</div>
+        <div class="metric-val" id="mInact">
+          —<span class="metric-unit">dtk</span>
+        </div>
+        <div class="metric-desc">Total waktu berhenti mengetik</div>
+      </div>
+ 
+      <!-- 9. Daylight_Encoded → ditampilkan sebagai label di kolom kanan -->
+      <!-- Info tambahan -->
+      <div class="metric-box">
+        <div class="metric-name">TYPING ACCURACY</div>
+        <div class="metric-val" id="mConfidence">
+          —<span class="metric-unit">%</span>
+        </div>
+        <div class="metric-desc">Persentase karakter yang benar</div>
+      </div>
+    </div>  
+ 
+      <!-- Probabilitas dari API -->
+      <!-- <div class="metric-box">
+        <div class="metric-name">PROBABILITAS STRES</div>
+        <div class="metric-val" id="mProbability">—</div>
+        <div class="metric-desc">Tingkat keyakinan model AI</div>
+      </div> -->
+
+      <!-- Akurasi model
+      <div class="metric-box confidence-box">
+        <div class="metric-name">Confidence</div>
+        <div class="metric-val" id="mConfidenceModel">—</div>
+        <div class="metric-desc">Tingkat Kepercayaan Model</div>
+      </div> -->
+ 
+    <div class="confidence-section confidence-box">
+
+      <div class="confidence-header">CONFIDENCE MODEL</div>
+      <div class="confidence-value" id="mConfidenceModel">—</div>
+      <!-- <div class="confidence-bar">
+          <div class="confidence-fill" id="confidenceFill"></div>
+      </div> -->
+
+      <div class="confidence-desc">
+          Tingkat kepercayaan model terhadap hasil klasifikasi.
+      </div>
+    </div>
+  </div>
+
+  <!-- KOLOM KANAN -->
+  <div class="result-right">
+
+    <!-- Kondisi Awal -->
+    <div class="sidebar-block">
+      <div class="section-label">Info Sesi</div>
+      <div class="condition-list">
+        <div class="condition-item">
+          <span class="condition-key">Waktu Sesi</span>
+          <span class="condition-val" id="cSessionTime">—</span>
+        </div>
+        <!-- Daylight_Encoded - fitur ke 9 -->
+        <!-- <div class="condition-item">
+          <span class="condition-key">Waktu</span>
+          <span class="condition-val" id="cDaylight">—</span>
+        </div> -->
+      </div>
+    </div>
+
+    <!-- Kesimpulan -->
+    <div class="sidebar-block">
+      <div class="section-label">Kesimpulan</div>
+      <div class="summary-box" id="summaryBox">
+        Menganalisis data...
+      </div>
+    </div>
+
+    <!-- Tombol Aksi -->
+    <div class="sidebar-block">
+      <div class="action-buttons">
+        <button class="btn-action-secondary" onclick="restartSession()">
+          ↺ Ulangi Sesi
+        </button>
+        <button class="btn-action-primary" onclick="window.print()">
+          ↓ Simpan
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<script src="resultApp.js"></script>
+</body>
+</html>
