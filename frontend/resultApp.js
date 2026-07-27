@@ -6,14 +6,14 @@ const sessionTime = sessionStorage.getItem('sessionTime')     || null;
 // const probability = parseFloat(sessionStorage.getItem('stressProbability') || '0');
 
 // ── LABEL WAKTU ───────────────────────────────────────────────
-// const daylightLabel = ['Pagi (05.00–11.00)', 'Siang (11.00–17.00)', 'Malam (17.00–05.00)'];
+const daylightLabel = ['Morning', 'Afternoon', 'Night'];
 
-// function getDaylightLabel() {
-//   const h = new Date().getHours();
-//   if (h >= 5  && h < 11) return daylightLabel[0];
-//   if (h >= 11 && h < 17) return daylightLabel[1];
-//   return daylightLabel[2];
-// }
+function getDaylightLabel(encoded) {
+  if (encoded === 0 || encoded === 1 || encoded === 2) {
+    return daylightLabel[encoded];
+  }
+  return '—';
+}
 
 // ── FORMAT ANGKA ─────────────────────────────────────────────
 function fmt(val, decimal = 0) {
@@ -40,33 +40,12 @@ if (result && result.stress === 'Stres') {
   dot.style.background     = 'var(--red)';
   dot.style.boxShadow      = '0 0 6px var(--red)';
 
-  // if (summaryBox && features) {
-  //   summaryBox.innerHTML =
-  //     `Model mengklasifikasikan kondisi <b>STRES</b> ` +
-  //     `dengan probabilitas <b>${(result.probability * 100).toFixed(1)}%</b>.<br><br>` +
-  //     `Selama sesi tercatat ` +
-  //     `<b>${features.backspace_count}</b> kali backspace, ` +
-  //     `<b>${fmt(features.total_inact_duration, 1)}</b> detik inaktif, ` +
-  //     `dan <b>${features.total_keystrokes}</b> total ketukan. ` +
-  //     // `Variabilitas hold time yang tinggi (<b>${fmt(features.hold_time_cv, 2)}</b>) ` +
-  //     `Flight time tidak teratur menjadi faktor utama.<br><br>` +
-  //     `Disarankan untuk beristirahat sejenak sebelum melanjutkan aktivitas.`;
-  // }
-
   if (summaryBox && features) {
     summaryBox.innerHTML =
       `Model mengklasifikasikan kondisi pengguna <b>STRES</b> ` +
       `dengan tingkat kepercayaan <b>${result.confidence}%</b>. ` +
-      'Nilai tersebut menunjukkan bahwa model pola pengetikan yang direkam sesuai dengan karakteristik kondisi stres.' +
+      `Nilai tersebut menunjukkan bahwa model pola pengetikan yang direkam sesuai dengan karakteristik kondisi stres. ` +
       `Pengguna disarankan untuk beristirahat sejenak sebelum melanjutkan aktivitas.`;
-      // `dengan probabilitas <b>${(result.probability * 100).toFixed(1)}%</b>.<br><br>` 
-      // `Selama sesi tercatat ` +
-      // `<b>${features.backspace_count}</b> kali backspace, ` +
-      // `<b>${fmt(features.total_inact_duration, 1)}</b> detik inaktif, ` +
-      // `dan <b>${features.total_keystrokes}</b> total ketukan. ` +
-      // `Variabilitas hold time yang tinggi (<b>${fmt(features.hold_time_cv, 2)}</b>) ` +
-      // `Flight time tidak teratur menjadi faktor utama.<br><br>` +
-      // `Disarankan untuk beristirahat sejenak sebelum melanjutkan aktivitas.`;
   }
 
 } else if (result && result.stress === 'Tidak Stres') {
@@ -78,21 +57,11 @@ if (result && result.stress === 'Stres') {
   dot.style.background     = 'var(--green)';
   dot.style.boxShadow      = '0 0 6px var(--green)';
 
-  // if (summaryBox && features) {
-  //   summaryBox.innerHTML =
-  //     `Model mengklasifikasikan kondisi <b>TIDAK STRES</b> ` +
-  //     `dengan probabilitas stres <b>${(result.probability * 100).toFixed(1)}%</b>.<br><br>` +
-  //     `Pola pengetikan konsisten dengan hold time rata-rata ` +
-  //     `<b>${fmt(features.hold_time_mean, 1)} ms</b> ` +
-  //     // `dan kecepatan <b>${fmt(features.typing_speed * 60, 0)} ketukan/menit</b>. ` +
-  //     `Kondisi saat ini baik untuk melanjutkan aktivitas.`;
-  // }
-
   if (summaryBox && features) {
     summaryBox.innerHTML =
       `Model mengklasifikasikan kondisi <b>TIDAK STRES</b> ` +
-      `dengan tingkat kepercayaan <b>${result.confidence}%</b>.` +
-      `Nilai tersebut menunjukkan bahwa pola pengetikan yang direkam sesuai dengan karakteristik kondisi normal sehingga pengguna dapat melanjutkan aktivitas seperti biasa.`;
+      `dengan tingkat kepercayaan <b>${result.confidence}%</b>. ` +
+      ` Nilai tersebut menunjukkan bahwa pola pengetikan yang direkam sesuai dengan karakteristik kondisi normal sehingga pengguna dapat melanjutkan aktivitas seperti biasa.`;
       // `dengan probabilitas stres <b>${(result.probability * 100).toFixed(1)}%</b>.<br><br>` 
       // `Pola pengetikan konsisten dengan hold time rata-rata ` +
       // `<b>${fmt(features.hold_time_mean, 1)} ms</b> ` +
@@ -107,12 +76,6 @@ if (result && result.stress === 'Stres') {
   if (summaryBox) summaryBox.textContent =
     'Tidak ada data sesi. Silakan kembali dan mulai sesi pengetikan baru.';
 }
-
-// ── TAMPILKAN PROBABILITAS ────────────────────────────────────
-// const mProbEl = document.getElementById('mProbability');
-// if (mProbEl && result) {
-//   mProbEl.textContent = (result.probability * 100).toFixed(1) + '%';
-// }
 
 //── TAMPILKAN CONFIDENCE ────────────────────────────────────
 const mConfidenceEl = document.getElementById('mConfidenceModel');
@@ -179,19 +142,10 @@ if (features) {
   const mKeyCount = document.getElementById('mKeyCount');
   if (mKeyCount) mKeyCount.textContent = features.total_keystrokes ?? '—';
 
-  // Kecepatan Ketik (k/menit)
-  // const mSpeed = document.getElementById('mSpeed');
-  // if (mSpeed) mSpeed.innerHTML =
-  //   `${fmt(features.typing_speed * 60, 0)}<span class="metric-unit">k/m</span>`;
-
   // Durasi Inaktif
   const mInact = document.getElementById('mInact');
   if (mInact) mInact.innerHTML =
     `${fmt(features.total_inact_duration / 1000, 1)}<span class="metric-unit">dtk</span>`;
-
-  // Hold CV (variabilitas hold)
-  // const mHoldCv = document.getElementById('mHoldCv');
-  // if (mHoldCv) mHoldCv.textContent = fmt(features.hold_time_cv, 3);
 
   // Backspace ratio
   const mBsRatio = document.getElementById('mBsRatio');
@@ -213,8 +167,13 @@ if (cSessionTime && sessionTime) {
     });
 }
 
-// const cDaylight = document.getElementById('cDaylight');
-// if (cDaylight) cDaylight.textContent = getDaylightLabel();
+const cDaylight = document.getElementById('cDaylight');
+if (cDaylight && features) {
+  cDaylight.textContent = getDaylightLabel(features.Daylight_Encoded);
+}
+
+console.log(document.getElementById('cDaylight'));
+console.log(JSON.parse(sessionStorage.getItem('stressFeatures')));
 
 // ── RESET & KEMBALI ───────────────────────────────────────────
 function restartSession() {

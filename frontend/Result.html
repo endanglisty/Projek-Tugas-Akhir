@@ -39,14 +39,14 @@
 
        <!-- 1. total_keystrokes -->
       <div class="metric-box">
-        <div class="metric-name">TOTAL KETUKAN</div>
+        <div class="metric-name">TOTAL KEYSTROKE</div>
         <div class="metric-val" id="mKeyCount">—</div>
         <div class="metric-desc">Jumlah tombol yang ditekan</div>
       </div>
  
       <!-- 2. backspace_count -->
       <div class="metric-box">
-        <div class="metric-name">JUMLAH BACKSPACE</div>
+        <div class="metric-name">TOTAL BACKSPACE</div>
         <div class="metric-val" id="mBackspace">
           —<span class="metric-unit">kali</span>
         </div>
@@ -72,13 +72,13 @@
       </div>
  
       <!-- 5. hold_time_std -->
-      <!-- <div class="metric-box">
+      <div class="metric-box">
         <div class="metric-name">HOLD TIME STD</div>
         <div class="metric-val" id="mHoldStd">
           —<span class="metric-unit">ms</span>
         </div>
         <div class="metric-desc">Standar deviasi hold time</div>
-      </div> -->
+      </div>
  
       <!-- 6. flight_time_mean -->
       <div class="metric-box">
@@ -90,17 +90,17 @@
       </div>
  
       <!-- 7. flight_time_std -->
-      <!-- <div class="metric-box">
+      <div class="metric-box">
         <div class="metric-name">FLIGHT TIME STD</div>
         <div class="metric-val" id="mFlightStd">
           —<span class="metric-unit">ms</span>
         </div>
         <div class="metric-desc">Standar deviasi jeda antar ketukan</div>
-      </div> -->
+      </div>
  
       <!-- 8. total_inact_duration -->
       <div class="metric-box">
-        <div class="metric-name">DURASI INAKTIF</div>
+        <div class="metric-name">INACTIVITY DURATION</div>
         <div class="metric-val" id="mInact">
           —<span class="metric-unit">dtk</span>
         </div>
@@ -109,21 +109,14 @@
  
       <!-- 9. Daylight_Encoded → ditampilkan sebagai label di kolom kanan -->
       <!-- Info tambahan -->
-      <div class="metric-box">
+      <!-- <div class="metric-box">
         <div class="metric-name">TYPING ACCURACY</div>
         <div class="metric-val" id="mConfidence">
           —<span class="metric-unit">%</span>
         </div>
         <div class="metric-desc">Persentase karakter yang benar</div>
-      </div>
-    </div>  
- 
-      <!-- Probabilitas dari API -->
-      <!-- <div class="metric-box">
-        <div class="metric-name">PROBABILITAS STRES</div>
-        <div class="metric-val" id="mProbability">—</div>
-        <div class="metric-desc">Tingkat keyakinan model AI</div>
       </div> -->
+    </div>  
 
       <!-- Akurasi model
       <div class="metric-box confidence-box">
@@ -151,17 +144,17 @@
 
     <!-- Kondisi Awal -->
     <div class="sidebar-block">
-      <div class="section-label">Info Sesi</div>
+      <div class="section-label">Session Info</div>
       <div class="condition-list">
         <div class="condition-item">
-          <span class="condition-key">Waktu Sesi</span>
+          <span class="condition-key">Datetime</span>
           <span class="condition-val" id="cSessionTime">—</span>
         </div>
         <!-- Daylight_Encoded - fitur ke 9 -->
-        <!-- <div class="condition-item">
-          <span class="condition-key">Waktu</span>
+        <div class="condition-item">
+          <span class="condition-key">Day</span>
           <span class="condition-val" id="cDaylight">—</span>
-        </div> -->
+        </div>
       </div>
     </div>
 

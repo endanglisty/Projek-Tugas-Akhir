@@ -81,41 +81,28 @@ def predict():
         print("Features:")
         print(features)
 
-        # Melakukan prediksi kelas menggunakan model SVM
-        # pred = model.predict(features)[0]
-
         # Menghitung probabilitas setiap kelas
         proba = model.predict_proba(features)[0]
         classes = list(model.classes_)
 
-        # mengubah label numerik menjadi label teks
-        # prediction = "Tidak Stres" if pred == 0 else "Stres"
-        # Tentukan prediksi dari proba tertinggi, BUKAN dari model.predict()
+        # Cari index kelas dengan probabilitas tertinggi
         pred_index = int(np.argmax(proba))
+
+        #Ambil label kelas asli (0 atau 1) berdasarkan index tersebut
         pred = classes[pred_index]
-        confidence = float(proba[pred_index])
+        confidence = float(proba[pred_index]) #Ambil nilai confidence kelas terpilih
 
-        prediction = "Tidak Stres" if str(pred) in ("0", "0.0") else "Stres"
-        
-        # Menampilkan probabilitas hasil prediksi
-        # print(f"Probabilitas -> Tidak Stres: {proba[0]:.4f} | Stres: {proba[1]:.4f}")
+        # Ubah label numerik (0/1)
+        prediction = "Tidak Stres" if pred == 0 else "Stres"
 
-        # Mengambil confidence berdasarkan prediksi
-        # pred_index = classes.index(pred) # Cari index prediksi di dalam classes_,
-        # confidence = proba[pred]
-
-        # if str(pred) in ("0", "Tidak Stres", "tidak stres", "0.0"):
-        #     prediction = "Tidak Stres"
-        # else:
-        #     prediction = "Stres"
-
+        # Menampilkan hasil akhir prediksi ke terminal
         print("Classes:", classes)
         print("Pred:", pred, "| Confidence:", confidence)
 
-        # Mengirim hasil prediksi ke frontend dalam format JSON
+        # Mengirim hasil klasifikasi ke frontend dalam format JSON
         return jsonify({
             "stress": prediction,
-            "confidence": round(confidence * 100, 2)
+            "confidence": round(confidence * 100, 2) # konversi ke persen
         })
 
     except Exception as e:
