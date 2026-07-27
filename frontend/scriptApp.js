@@ -107,8 +107,30 @@ area.addEventListener('keyup', (e) => {
 });
 
 area.addEventListener('input', () => {
+  // if (!isDone) return;
+    
+  // renderReferenceDisplayOnly(area.value);
 
-  if (!isDone) renderReference(area.value);
+  if (isDone) return;
+  // Hanya update tampilan visual saat mengetik, jangan trigger finishSession di sini
+  const typed = area.value;
+  const refEl = document.getElementById('refText');
+  let html = '';
+  for (let i = 0; i < REFERENCE.length; i++) {
+    const ch = REFERENCE[i] === ' ' ? '&nbsp;' : REFERENCE[i];
+    if (i < typed.length) {
+      html += `<span class="ref-char ${typed[i] === REFERENCE[i] ? 'correct' : 'wrong'}">${ch}</span>`;
+    } else if (i === typed.length) {
+      html += `<span class="ref-char current">${ch}</span>`;
+    } else {
+      html += `<span class="ref-char">${ch}</span>`;
+    }
+  }
+  refEl.innerHTML = html;
+  document.getElementById('progressBar').style.width =
+    Math.min(100, (typed.length / REFERENCE.length) * 100) + '%';
+  const cp = document.getElementById('charProgress');
+  if (cp) cp.textContent = Math.min(typed.length, REFERENCE.length);
 });
 
 // ── PELACAK INAKTIVITAS ──────────────────────────────────────
@@ -190,7 +212,6 @@ function goToResult() {
 function finishTyping() { goToResult(); }
 
 // ── EKSTRAKSI FITUR ───────────────────────────────────────────
-// Fitur sesuai FEATURE_COLS di notebook (tanpa avg_mouse_speed, Fatigue, PAM)
 function extractFeatures(buf) {
   // Hold time dari pressTime & releaseTime
   const holds = buf.map(k => k.holdTime).filter(h => h > 0 && h < 2000);
@@ -204,43 +225,82 @@ function extractFeatures(buf) {
 
   const holdMean   = mean(holds);
   const holdStd    = std(holds);
-  // const holdCv     = holdMean > 0 ? holdStd / holdMean : 0;   // koefisien variasi
 
   const flightMean = flights.length ? mean(flights) : 0;
   const flightStd  = flights.length ? std(flights)  : 0;
-  // const flightCv   = flightMean > 0 ? flightStd / flightMean : 0;
 
   const keyCount       = buf.length;
   const backspaceCount = buf.filter(k => k.key === 'Backspace').length;
   const backspaceRatio = keyCount > 0 ? backspaceCount / keyCount : 0;
 
-  // Typing speed: ketukan per detik selama sesi
-  const elapsedSec  = sessionStart
-    ? (performance.now() - sessionStart) / 1000
-    : 1;
-  const typingSpeed = elapsedSec > 0 ? keyCount / elapsedSec : 0;
-
-  const totalInactDuration = totalInactMs / 1000; // konversi ke detik
+  // total_inact_duration dikirim dalam MILIDETIK (ms), sesuai satuan saat training
+  const totalInactDurationMs = totalInactMs;
 
   // Waktu sesi
   const daylightEncoded = getDaylightValue();
 
   return {
-    // 12 fitur sesuai FEATURE_COLS notebook
     total_keystrokes:     keyCount,
     backspace_count:      backspaceCount,
     backspace_ratio:      parseFloat(backspaceRatio.toFixed(4)),
     hold_time_mean:       parseFloat(holdMean.toFixed(2)),
     hold_time_std:        parseFloat(holdStd.toFixed(2)),
-    // hold_time_cv:         parseFloat(holdCv.toFixed(4)),
     flight_time_mean:     parseFloat(flightMean.toFixed(2)),
     flight_time_std:      parseFloat(flightStd.toFixed(2)),
-    // flight_time_cv:       parseFloat(flightCv.toFixed(4)),
-    // typing_speed:         parseFloat(typingSpeed.toFixed(4)),
-    total_inact_duration: parseFloat(totalInactDuration.toFixed(2)),
+    total_inact_duration: parseFloat(totalInactDurationMs.toFixed(2)),
     Daylight_Encoded:     daylightEncoded
   };
 }
+// function extractFeatures(buf) {
+//   // Hold time dari pressTime & releaseTime
+//   const holds = buf.map(k => k.holdTime).filter(h => h > 0 && h < 2000);
+
+//   // Flight time: jeda antar ketukan
+//   const flights = [];
+//   for (let i = 1; i < buf.length; i++) {
+//     const f = buf[i].pressTime - buf[i-1].pressTime;
+//     if (f > 0 && f < 5000) flights.push(f);
+//   }
+
+//   const holdMean   = mean(holds);
+//   const holdStd    = std(holds);
+//   // const holdCv     = holdMean > 0 ? holdStd / holdMean : 0;   // koefisien variasi
+
+//   const flightMean = flights.length ? mean(flights) : 0;
+//   const flightStd  = flights.length ? std(flights)  : 0;
+//   // const flightCv   = flightMean > 0 ? flightStd / flightMean : 0;
+
+//   const keyCount       = buf.length;
+//   const backspaceCount = buf.filter(k => k.key === 'Backspace').length;
+//   const backspaceRatio = keyCount > 0 ? backspaceCount / keyCount : 0;
+
+//   // Typing speed: ketukan per detik selama sesi
+//   const elapsedSec  = sessionStart
+//     ? (performance.now() - sessionStart) / 1000
+//     : 1;
+//   const typingSpeed = elapsedSec > 0 ? keyCount / elapsedSec : 0;
+
+//   const totalInactDuration = totalInactMs; // konversi ke detik
+
+//   // Waktu sesi
+//   const daylightEncoded = getDaylightValue();
+
+//   return {
+//     // 12 fitur sesuai FEATURE_COLS notebook
+//     total_keystrokes:     keyCount,
+//     backspace_count:      backspaceCount,
+//     backspace_ratio:      parseFloat(backspaceRatio.toFixed(4)),
+//     hold_time_mean:       parseFloat(holdMean.toFixed(2)),
+//     hold_time_std:        parseFloat(holdStd.toFixed(2)),
+//     // hold_time_cv:         parseFloat(holdCv.toFixed(4)),
+//     flight_time_mean:     parseFloat(flightMean.toFixed(2)),
+//     flight_time_std:      parseFloat(flightStd.toFixed(2)),
+//     // flight_time_cv:       parseFloat(flightCv.toFixed(4)),
+//     // typing_speed:         parseFloat(typingSpeed.toFixed(4)),
+//     total_inact_duration: parseFloat(totalInactDurationMs.toFixed(2)),
+//     Daylight_Encoded:     daylightEncoded
+//   };
+// }
 
 // ── KLASIFIKASI — FETCH KE FLASK API ─────────────────────────
 async function classifyStress(features) {

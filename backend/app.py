@@ -82,24 +82,40 @@ def predict():
         print(features)
 
         # Melakukan prediksi kelas menggunakan model SVM
-        pred = model.predict(features)[0]
+        # pred = model.predict(features)[0]
 
         # Menghitung probabilitas setiap kelas
         proba = model.predict_proba(features)[0]
+        classes = list(model.classes_)
 
         # mengubah label numerik menjadi label teks
-        prediction = "Tidak Stres" if pred == 0 else "Stres"
+        # prediction = "Tidak Stres" if pred == 0 else "Stres"
+        # Tentukan prediksi dari proba tertinggi, BUKAN dari model.predict()
+        pred_index = int(np.argmax(proba))
+        pred = classes[pred_index]
+        confidence = float(proba[pred_index])
+
+        prediction = "Tidak Stres" if str(pred) in ("0", "0.0") else "Stres"
         
         # Menampilkan probabilitas hasil prediksi
-        print(f"Probabilitas -> Tidak Stres: {proba[0]:.4f} | Stres: {proba[1]:.4f}")
+        # print(f"Probabilitas -> Tidak Stres: {proba[0]:.4f} | Stres: {proba[1]:.4f}")
 
         # Mengambil confidence berdasarkan prediksi
-        confidence = proba[pred]
+        # pred_index = classes.index(pred) # Cari index prediksi di dalam classes_,
+        # confidence = proba[pred]
+
+        # if str(pred) in ("0", "Tidak Stres", "tidak stres", "0.0"):
+        #     prediction = "Tidak Stres"
+        # else:
+        #     prediction = "Stres"
+
+        print("Classes:", classes)
+        print("Pred:", pred, "| Confidence:", confidence)
 
         # Mengirim hasil prediksi ke frontend dalam format JSON
         return jsonify({
             "stress": prediction,
-            "confidence": round(confidence * 100,2)
+            "confidence": round(confidence * 100, 2)
         })
 
     except Exception as e:

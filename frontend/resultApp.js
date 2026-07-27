@@ -56,14 +56,17 @@ if (result && result.stress === 'Stres') {
   if (summaryBox && features) {
     summaryBox.innerHTML =
       `Model mengklasifikasikan kondisi pengguna <b>STRES</b> ` +
+      `dengan tingkat kepercayaan <b>${result.confidence}%</b>. ` +
+      'Nilai tersebut menunjukkan bahwa model pola pengetikan yang direkam sesuai dengan karakteristik kondisi stres.' +
+      `Pengguna disarankan untuk beristirahat sejenak sebelum melanjutkan aktivitas.`;
       // `dengan probabilitas <b>${(result.probability * 100).toFixed(1)}%</b>.<br><br>` 
-      `Selama sesi tercatat ` +
-      `<b>${features.backspace_count}</b> kali backspace, ` +
+      // `Selama sesi tercatat ` +
+      // `<b>${features.backspace_count}</b> kali backspace, ` +
       // `<b>${fmt(features.total_inact_duration, 1)}</b> detik inaktif, ` +
-      `dan <b>${features.total_keystrokes}</b> total ketukan. ` +
+      // `dan <b>${features.total_keystrokes}</b> total ketukan. ` +
       // `Variabilitas hold time yang tinggi (<b>${fmt(features.hold_time_cv, 2)}</b>) ` +
-      `Flight time tidak teratur menjadi faktor utama.<br><br>` +
-      `Disarankan untuk beristirahat sejenak sebelum melanjutkan aktivitas.`;
+      // `Flight time tidak teratur menjadi faktor utama.<br><br>` +
+      // `Disarankan untuk beristirahat sejenak sebelum melanjutkan aktivitas.`;
   }
 
 } else if (result && result.stress === 'Tidak Stres') {
@@ -88,11 +91,13 @@ if (result && result.stress === 'Stres') {
   if (summaryBox && features) {
     summaryBox.innerHTML =
       `Model mengklasifikasikan kondisi <b>TIDAK STRES</b> ` +
+      `dengan tingkat kepercayaan <b>${result.confidence}%</b>.` +
+      `Nilai tersebut menunjukkan bahwa pola pengetikan yang direkam sesuai dengan karakteristik kondisi normal sehingga pengguna dapat melanjutkan aktivitas seperti biasa.`;
       // `dengan probabilitas stres <b>${(result.probability * 100).toFixed(1)}%</b>.<br><br>` 
-      `Pola pengetikan konsisten dengan hold time rata-rata ` +
-      `<b>${fmt(features.hold_time_mean, 1)} ms</b> ` +
+      // `Pola pengetikan konsisten dengan hold time rata-rata ` +
+      // `<b>${fmt(features.hold_time_mean, 1)} ms</b> ` +
       // `dan kecepatan <b>${fmt(features.typing_speed * 60, 0)} ketukan/menit</b>. ` +
-      `Kondisi saat ini baik untuk melanjutkan aktivitas.`;
+      // `Kondisi saat ini baik untuk melanjutkan aktivitas.`;
   }
 
 } else {
@@ -114,15 +119,29 @@ const mConfidenceEl = document.getElementById('mConfidenceModel');
 const confidenceFill = document.getElementById("confidenceFill");
 
 if (result && result.confidence != null) {
-
-  const confidence = Number(result.confidence);
-
-  mConfidenceEl.textContent = confidence.toFixed(2) + "%";
-
-  if (confidenceFill) {
-      confidenceFill.style.width = confidence + "%";
+  const confidenceNum = Number(result.confidence);
+  if (!isNaN(confidenceNum)) {
+    mConfidenceEl.textContent = confidenceNum.toFixed(2) + "%";
+    if (confidenceFill) confidenceFill.style.width = confidenceNum + "%";
+  } else {
+    mConfidenceEl.textContent = "Tidak tersedia (mode offline)";
+    // if (confidenceFill) confidenceFill.style.width = "0%";
   }
 }
+
+// if (result && result.confidence != null) {
+
+//   const confidence = Number(result.confidence);
+
+//   mConfidenceEl.textContent = confidence.toFixed(2) + "%";
+
+//   console.log(result);
+//   console.log(result.confidence);
+
+//   if (confidenceFill) {
+//       confidenceFill.style.width = confidence + "%";
+//   }
+// }
 
 // if (mConfidenceEl && result && result.confidence !== undefined) {
 //     mConfidenceEl.textContent = result.confidence + '%';
@@ -168,7 +187,7 @@ if (features) {
   // Durasi Inaktif
   const mInact = document.getElementById('mInact');
   if (mInact) mInact.innerHTML =
-    `${fmt(features.total_inact_duration, 1)}<span class="metric-unit">dtk</span>`;
+    `${fmt(features.total_inact_duration / 1000, 1)}<span class="metric-unit">dtk</span>`;
 
   // Hold CV (variabilitas hold)
   // const mHoldCv = document.getElementById('mHoldCv');
