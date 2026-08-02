@@ -57,6 +57,7 @@ function renderReference(typed) {
     } else if (i === typed.length) {
       html += `<span class="ref-char current">${ch}</span>`;
     } else {
+      
       html += `<span class="ref-char">${ch}</span>`;
     }
   }
@@ -78,55 +79,63 @@ function renderReference(typed) {
 }
 
 // ── KEYSTROKE CAPTURE ────────────────────────────────────────
+//event saat tombol mulai ditekan
 area.addEventListener('keydown', (e) => {
   if (isDone) return;
   if (!isActive) startSession();
   
+  // Mereset timer untuk mendeteksi waktu tidak aktif (idle)
   resetInactivityTimer();
-  
+  // Menyimpan waktu saat tombol ditekan
   pressMap[e.code] = performance.now();
 });
 
+// event saat tombol dilepas
 area.addEventListener('keyup', (e) => {
   if (isDone) return;
   const t = performance.now();
 
+  // Memastikan tombol sebelumnya telah tercatat saat keydown
   if (pressMap[e.code] !== undefined) {
-    // const t = performance.now();
     const holdTime = t - pressMap[e.code];
+    // Menyimpan data keystroke ke dalam array
     keystrokes.push({
       key:         e.key,
       pressTime:   pressMap[e.code],
       releaseTime: t,
       holdTime:    holdTime
     });
-    delete pressMap[e.code];
+    delete pressMap[e.code]; // Membersihkan data sementara setelah Hold Time berhasil dihitung
     updateStats();
   }
+  // Memperbarui tampilan teks referensi
   renderReference(area.value);
 });
 
+//event saat isi area pengetikan berubah
 area.addEventListener('input', () => {
-  // if (!isDone) return;
-    
-  // renderReferenceDisplayOnly(area.value);
 
   if (isDone) return;
-  // Hanya update tampilan visual saat mengetik, jangan trigger finishSession di sini
-  const typed = area.value;
-  const refEl = document.getElementById('refText');
+  const typed = area.value; // Mengambil teks yang sedang diketik pengguna
+  const refEl = document.getElementById('refText'); // Mengambil elemen teks referensi
   let html = '';
   for (let i = 0; i < REFERENCE.length; i++) {
+    // Mengubah spasi menjadi karakter HTML agar tetap terlihat
     const ch = REFERENCE[i] === ' ' ? '&nbsp;' : REFERENCE[i];
     if (i < typed.length) {
+      // Memberi warna sesuai hasil perbandingan karakter
       html += `<span class="ref-char ${typed[i] === REFERENCE[i] ? 'correct' : 'wrong'}">${ch}</span>`;
     } else if (i === typed.length) {
+      // Menandai posisi karakter berikutnya yang harus diketik
       html += `<span class="ref-char current">${ch}</span>`;
     } else {
+       // Menampilkan karakter yang belum diketik
       html += `<span class="ref-char">${ch}</span>`;
     }
   }
   refEl.innerHTML = html;
+
+  // Memperbarui progress bar berdasarkan jumlah karakter yang telah diketik
   document.getElementById('progressBar').style.width =
     Math.min(100, (typed.length / REFERENCE.length) * 100) + '%';
   const cp = document.getElementById('charProgress');
@@ -135,11 +144,11 @@ area.addEventListener('input', () => {
 
 // ── PELACAK INAKTIVITAS ──────────────────────────────────────
 function resetInactivityTimer() {
-  if (inactivityStart !== null) {
+  if (inactivityStart !== null) { //durasi idle dihitung ketika mulai mengatik
     totalInactMs   += performance.now() - inactivityStart;
     inactivityStart = null;
   }
-  clearTimeout(inactivityTimer);
+  clearTimeout(inactivityTimer); //timer lama dibatalkan
   inactivityTimer = setTimeout(() => {
     inactivityStart = performance.now();
   }, IDLE_THRESHOLD);
@@ -214,24 +223,30 @@ function finishTyping() { goToResult(); }
 // ── EKSTRAKSI FITUR ───────────────────────────────────────────
 function extractFeatures(buf) {
   // Hold time dari pressTime & releaseTime
+  // Mengambil seluruh nilai Hold Time yang valid (0–2000 ms)
   const holds = buf.map(k => k.holdTime).filter(h => h > 0 && h < 2000);
 
-  // Flight time: jeda antar ketukan
+  // Flight time (selisih waktu antar penekanan tombol)
   const flights = [];
   for (let i = 1; i < buf.length; i++) {
     const f = buf[i].pressTime - buf[i-1].pressTime;
-    if (f > 0 && f < 5000) flights.push(f);
+    if (f > 0 && f < 5000) flights.push(f); // Hanya menyimpan nilai Flight Time yang valid
   }
 
+  // Menghitung rata-rata dan standar deviasi Hold Time
   const holdMean   = mean(holds);
   const holdStd    = std(holds);
 
+  // Menghitung rata-rata dan standar deviasi Flight Time
   const flightMean = flights.length ? mean(flights) : 0;
   const flightStd  = flights.length ? std(flights)  : 0;
 
+  // Menghitung jumlah seluruh penekanan tombol
   const keyCount       = buf.length;
+
+  // Menghitung jumlah tombol Backspace
   const backspaceCount = buf.filter(k => k.key === 'Backspace').length;
-  const backspaceRatio = keyCount > 0 ? backspaceCount / keyCount : 0;
+  const backspaceRatio = keyCount > 0 ? backspaceCount / keyCount : 0;   // Menghitung rasio penggunaan Backspace
 
   // total_inact_duration dikirim dalam MILIDETIK (ms), sesuai satuan saat training
   const totalInactDurationMs = totalInactMs;
@@ -239,6 +254,7 @@ function extractFeatures(buf) {
   // Waktu sesi
   const daylightEncoded = getDaylightValue();
 
+  // Mengembalikan seluruh fitur yang akan dikirim ke backend
   return {
     total_keystrokes:     keyCount,
     backspace_count:      backspaceCount,
@@ -251,89 +267,37 @@ function extractFeatures(buf) {
     Daylight_Encoded:     daylightEncoded
   };
 }
-// function extractFeatures(buf) {
-//   // Hold time dari pressTime & releaseTime
-//   const holds = buf.map(k => k.holdTime).filter(h => h > 0 && h < 2000);
-
-//   // Flight time: jeda antar ketukan
-//   const flights = [];
-//   for (let i = 1; i < buf.length; i++) {
-//     const f = buf[i].pressTime - buf[i-1].pressTime;
-//     if (f > 0 && f < 5000) flights.push(f);
-//   }
-
-//   const holdMean   = mean(holds);
-//   const holdStd    = std(holds);
-//   // const holdCv     = holdMean > 0 ? holdStd / holdMean : 0;   // koefisien variasi
-
-//   const flightMean = flights.length ? mean(flights) : 0;
-//   const flightStd  = flights.length ? std(flights)  : 0;
-//   // const flightCv   = flightMean > 0 ? flightStd / flightMean : 0;
-
-//   const keyCount       = buf.length;
-//   const backspaceCount = buf.filter(k => k.key === 'Backspace').length;
-//   const backspaceRatio = keyCount > 0 ? backspaceCount / keyCount : 0;
-
-//   // Typing speed: ketukan per detik selama sesi
-//   const elapsedSec  = sessionStart
-//     ? (performance.now() - sessionStart) / 1000
-//     : 1;
-//   const typingSpeed = elapsedSec > 0 ? keyCount / elapsedSec : 0;
-
-//   const totalInactDuration = totalInactMs; // konversi ke detik
-
-//   // Waktu sesi
-//   const daylightEncoded = getDaylightValue();
-
-//   return {
-//     // 12 fitur sesuai FEATURE_COLS notebook
-//     total_keystrokes:     keyCount,
-//     backspace_count:      backspaceCount,
-//     backspace_ratio:      parseFloat(backspaceRatio.toFixed(4)),
-//     hold_time_mean:       parseFloat(holdMean.toFixed(2)),
-//     hold_time_std:        parseFloat(holdStd.toFixed(2)),
-//     // hold_time_cv:         parseFloat(holdCv.toFixed(4)),
-//     flight_time_mean:     parseFloat(flightMean.toFixed(2)),
-//     flight_time_std:      parseFloat(flightStd.toFixed(2)),
-//     // flight_time_cv:       parseFloat(flightCv.toFixed(4)),
-//     // typing_speed:         parseFloat(typingSpeed.toFixed(4)),
-//     total_inact_duration: parseFloat(totalInactDurationMs.toFixed(2)),
-//     Daylight_Encoded:     daylightEncoded
-//   };
-// }
 
 // ── KLASIFIKASI — FETCH KE FLASK API ─────────────────────────
 async function classifyStress(features) {
-  // Payload sesuai FEATURE_COLS notebook — tanpa avg_mouse_speed, Fatigue, PAM
+  // Menyusun payload sesuai urutan fitur model SVM
   const payload = {
     total_keystrokes:     features.total_keystrokes,
     backspace_count:      features.backspace_count,
     backspace_ratio:      features.backspace_ratio,
     hold_time_mean:       features.hold_time_mean,
     hold_time_std:        features.hold_time_std,
-    // hold_time_cv:         features.hold_time_cv,
     flight_time_mean:     features.flight_time_mean,
     flight_time_std:      features.flight_time_std,
-    // flight_time_cv:       features.flight_time_cv,
-    // typing_speed:         features.typing_speed,
     total_inact_duration: features.total_inact_duration,
     Daylight_Encoded:     features.Daylight_Encoded
   };
 
   try {
+    // Mengirim data fitur ke API Flask
     const response = await fetch('http://localhost:5000/predict', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload)
     });
 
+    // Menampilkan error jika backend gagal merespons
     if(!response.ok){
     throw new Error("Backend Error");
     } 
     
     const result = await response.json();
     // Backend mengembalikan: { stress: 'Stres'/'Tidak Stres', probability: 0.xx }
-    // sessionStorage.setItem('stressProbability', result.probability ?? 0);
     return result;
 
   } catch (err) {
@@ -347,12 +311,8 @@ async function classifyStress(features) {
 // ── FALLBACK RULE-BASED (jika API offline) ───────────────────
 function classifyStressFallback(f) {
   let score = 0;
-  // if (f.hold_time_cv > 0.5)          score += 2; // ketikan tidak konsisten
-  // if (f.flight_time_cv > 0.6)        score += 2; // ritme tidak teratur
   if (f.backspace_ratio > 0.08)      score += 2; // banyak koreksi
   if (f.hold_time_mean < 80)         score += 1; // terlalu cepat menekan
-  // if (f.typing_speed < 0.5 ||
-  //     f.typing_speed > 8)            score += 1; // kecepatan tidak normal
   if (f.total_inact_duration > 30)   score += 1; // sering berhenti
   return score >= 3 ? 'Stres' : 'Tidak Stres';
 }
@@ -369,14 +329,17 @@ function getDaylightValue() {
 // ── STATISTIK REAL-TIME ──────────────────────────────────────
 // Label chip disesuaikan dengan fitur model yang aktual
 function updateStats() {
-  const n = keystrokes.length;
+  const n = keystrokes.length; // mnghitung jumlah ketukan
   document.getElementById('keyCount').textContent = n;
   if (n < 2) return;
 
-  const holds = keystrokes.map(k => k.holdTime);
+  const holds = keystrokes.map(k => k.holdTime); // Mengambil seluruh Hold Time
+
+  // Menghitung rata-rata dan standar deviasi Hold Time
   const holdAvgMs = mean(holds);
   const holdStd = std(holds);
 
+  // Menghitung rata-rata dan standar deviasi Hold Time
   const flights = [];
   for (let i = 1; i < keystrokes.length; i++) {
     const f = keystrokes[i].pressTime - keystrokes[i - 1].pressTime;
@@ -385,23 +348,19 @@ function updateStats() {
     }
   }
 
+  // Menghitung rata-rata dan standar deviasi Flight Time
   const flightAvgMs = flights.length ? mean(flights) : 0;
   const flightStd = flights.length ? std(flights) : 0;
 
+  // Menghitung jumlah penggunaan Backspace
   const bsCount  = keystrokes.filter(k => k.key === 'Backspace').length;
-  const inactSec = (totalInactMs / 1000).toFixed(1);
-
-  const elapsedMin = sessionStart
-    ? (performance.now() - sessionStart) / 60000
-    : 0;
-  const speed = elapsedMin > 0 ? Math.round(n / elapsedMin) : 0;
+  const inactSec = (totalInactMs / 1000).toFixed(1); // ubah waktu tidak aktif dari ms ke detik
 
   // Stat-chip bawah textarea
   document.getElementById('holdAvg').textContent    = Math.round(holdAvgMs);   // Hold Time (ms)
   document.getElementById('flightAvg').textContent  = Math.round(flightAvgMs); // Flight Time (ms)
-  // document.getElementById('typingSpeed').textContent = speed;
 
-  // Metrik sidebar/result (jika elemen ada)
+  // Mengambil elemen HTML berdasarkan id
   const mHold    = document.getElementById('mHold');
   const mFlight  = document.getElementById('mFlight');
   const mHoldStd = document.getElementById('mHoldStd');
@@ -409,21 +368,23 @@ function updateStats() {
   const mVar     = document.getElementById('mVar');
   const mInact   = document.getElementById('mInact');
 
-  if (mHold)    mHold.innerHTML    = `${Math.round(holdAvgMs)}<span class="metric-unit">ms</span>`;
-  if (mFlight)  mFlight.innerHTML  = `${Math.round(flightAvgMs)}<span class="metric-unit">ms</span>`;
-  if (mHoldStd) mHoldStd.innerHTML = `${holdStd.toFixed(1)}<span class="metric-unit">ms</span>`;
-  if (mFlightStd) mFlightStd.innerHTML = `${flightStd.toFixed(1)}<span class="metric-unit">ms</span>`;
-  if (mVar)     mVar.textContent   = n;
-  if (mInact)   mInact.innerHTML   = `${inactSec}<span class="metric-unit">dtk</span>`;
+  if (mHold)    mHold.innerHTML    = `${Math.round(holdAvgMs)}<span class="metric-unit">ms</span>`; // Menampilkan rata-rata Hold Time (ms)
+  if (mFlight)  mFlight.innerHTML  = `${Math.round(flightAvgMs)}<span class="metric-unit">ms</span>`; // rata rata flight time
+  if (mHoldStd) mHoldStd.innerHTML = `${holdStd.toFixed(1)}<span class="metric-unit">ms</span>`; // std Hold Time
+  if (mFlightStd) mFlightStd.innerHTML = `${flightStd.toFixed(1)}<span class="metric-unit">ms</span>`; // std Flight time
+  if (mVar)     mVar.textContent   = n; //jumlah total penekanan tombol (keystroke)
+  if (mInact)   mInact.innerHTML   = `${inactSec}<span class="metric-unit">dtk</span>`; // total durasi tidak aktif (idle time) dalam detik
 }
 
 // ── UTILS ────────────────────────────────────────────────────
+// Menghitung nilai rata-rata (mean) dari sebuah array
 function mean(arr) {
   return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
 }
 
+// Menghitung standar deviasi dari sebuah array
 function std(arr) {
   if (arr.length < 2) return 0;
-  const m = mean(arr);
-  return Math.sqrt(arr.reduce((s, x) => s + (x - m) ** 2, 0) / arr.length);
+  const m = mean(arr);  // Hitung nilai rata-rata
+  return Math.sqrt(arr.reduce((s, x) => s + (x - m) ** 2, 0) / arr.length); // Hitung standar deviasi
 }

@@ -3,7 +3,6 @@ const features    = JSON.parse(sessionStorage.getItem('stressFeatures') || 'null
 const result      = JSON.parse(sessionStorage.getItem('stressResult')   || 'null');
 const confidence    = sessionStorage.getItem('stressConfidence')  || null;
 const sessionTime = sessionStorage.getItem('sessionTime')     || null;
-// const probability = parseFloat(sessionStorage.getItem('stressProbability') || '0');
 
 // ── LABEL WAKTU ───────────────────────────────────────────────
 const daylightLabel = ['Morning', 'Afternoon', 'Night'];
@@ -40,6 +39,7 @@ if (result && result.stress === 'Stres') {
   dot.style.background     = 'var(--red)';
   dot.style.boxShadow      = '0 0 6px var(--red)';
 
+  // Menampilkan teks kesimpulan
   if (summaryBox && features) {
     summaryBox.innerHTML =
       `Model mengklasifikasikan kondisi pengguna <b>STRES</b> ` +
@@ -48,7 +48,7 @@ if (result && result.stress === 'Stres') {
       `Pengguna disarankan untuk beristirahat sejenak sebelum melanjutkan aktivitas.`;
   }
 
-} else if (result && result.stress === 'Tidak Stres') {
+} else if (result && result.stress === 'Tidak Stres') { // Menampilkan status tidak stres
   card.classList.add('no-stress');
   icon.textContent         = '✓';
   label.textContent        = 'TIDAK STRES';
@@ -57,16 +57,12 @@ if (result && result.stress === 'Stres') {
   dot.style.background     = 'var(--green)';
   dot.style.boxShadow      = '0 0 6px var(--green)';
 
+  // Menampilkan teks kesimpulan tidak stres
   if (summaryBox && features) {
     summaryBox.innerHTML =
       `Model mengklasifikasikan kondisi <b>TIDAK STRES</b> ` +
       `dengan tingkat kepercayaan <b>${result.confidence}%</b>. ` +
       ` Nilai tersebut menunjukkan bahwa pola pengetikan yang direkam sesuai dengan karakteristik kondisi normal sehingga pengguna dapat melanjutkan aktivitas seperti biasa.`;
-      // `dengan probabilitas stres <b>${(result.probability * 100).toFixed(1)}%</b>.<br><br>` 
-      // `Pola pengetikan konsisten dengan hold time rata-rata ` +
-      // `<b>${fmt(features.hold_time_mean, 1)} ms</b> ` +
-      // `dan kecepatan <b>${fmt(features.typing_speed * 60, 0)} ketukan/menit</b>. ` +
-      // `Kondisi saat ini baik untuk melanjutkan aktivitas.`;
   }
 
 } else {
@@ -88,30 +84,10 @@ if (result && result.confidence != null) {
     if (confidenceFill) confidenceFill.style.width = confidenceNum + "%";
   } else {
     mConfidenceEl.textContent = "Tidak tersedia (mode offline)";
-    // if (confidenceFill) confidenceFill.style.width = "0%";
   }
 }
 
-// if (result && result.confidence != null) {
-
-//   const confidence = Number(result.confidence);
-
-//   mConfidenceEl.textContent = confidence.toFixed(2) + "%";
-
-//   console.log(result);
-//   console.log(result.confidence);
-
-//   if (confidenceFill) {
-//       confidenceFill.style.width = confidence + "%";
-//   }
-// }
-
-// if (mConfidenceEl && result && result.confidence !== undefined) {
-//     mConfidenceEl.textContent = result.confidence + '%';
-// }
-
 // ── TAMPILKAN METRIK KETIKAN ──────────────────────────────────
-// Sesuai fitur model: tanpa avg_mouse_speed, Fatigue, PAM
 if (features) {
   // Hold Time (dari Press & Release)
   const mHold = document.getElementById('mHold');
@@ -167,6 +143,7 @@ if (cSessionTime && sessionTime) {
     });
 }
 
+// Daylight
 const cDaylight = document.getElementById('cDaylight');
 if (cDaylight && features) {
   cDaylight.textContent = getDaylightLabel(features.Daylight_Encoded);
@@ -177,7 +154,7 @@ console.log(JSON.parse(sessionStorage.getItem('stressFeatures')));
 
 // ── RESET & KEMBALI ───────────────────────────────────────────
 function restartSession() {
-  // Hapus hanya data sesi, bukan kondisi user
+  // Hapus data sesi sebelumnya
   ['stressFeatures', 'stressResult', 'stressConfidence', 'sessionTime', 'referenceText'].forEach(k => {
     sessionStorage.removeItem(k);
   });
