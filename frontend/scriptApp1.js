@@ -20,12 +20,11 @@ if (!REFERENCE) {
 }
 
 // ── STATE ────────────────────────────────────────────────────
-let keystrokes    = [];
-let pressMap      = {};
-let sessionStart  = null;
-let isActive      = false;
-let isComplete    = false;  // status "teks saat ini sudah lengkap" — bisa berubah-ubah (naik/turun)
-let isSubmitting  = false;  // mencegah interaksi ganda saat proses kirim ke API
+let keystrokes      = [];
+let pressMap        = {};
+let sessionStart    = null;
+let isActive        = false;
+let isDone          = false;
 
 // Pelacak inaktivitas
 let inactivityStart = null;
@@ -37,7 +36,7 @@ const IDLE_THRESHOLD = 2000; // ms tanpa ketukan = idle
 const area = document.getElementById('typingArea');
 
 // ── INIT ─────────────────────────────────────────────────────
-updateReferenceDisplay('');
+renderReference('');
 
 // Update counter total karakter jika elemen ada
 const charTotalEl = document.getElementById('charTotal');
@@ -45,8 +44,8 @@ if (charTotalEl) charTotalEl.textContent = REFERENCE.length;
 
 area.setAttribute('maxlength', REFERENCE.length);
 
-// ── TAMPILAN WARNA TEKS REFERENSI (murni visual, tidak memicu proses selesai) ──
-function updateReferenceDisplay(typed) {
+// ── RENDER TEKS REFERENSI ────────────────────────────────────
+function renderReference(typed) {
   const refEl = document.getElementById('refText');
   let html = '';
 
@@ -58,6 +57,7 @@ function updateReferenceDisplay(typed) {
     } else if (i === typed.length) {
       html += `<span class="ref-char current">${ch}</span>`;
     } else {
+      
       html += `<span class="ref-char">${ch}</span>`;
     }
   }
@@ -71,66 +71,84 @@ function updateReferenceDisplay(typed) {
   // Counter karakter
   const cp = document.getElementById('charProgress');
   if (cp) cp.textContent = Math.min(typed.length, REFERENCE.length);
-}
 
-// ── CEK STATUS LENGKAP & TOGGLE TOMBOL "CEK HASIL" ─────────────
-function checkCompletion(typed) {
-  const complete = typed.length >= REFERENCE.length;
-  if (complete !== isComplete) {
-    isComplete = complete;
-    const btn = document.getElementById('btnResult');
-    if (btn) {
-      btn.disabled = !isComplete || isSubmitting;
-    }
+  // Cek selesai
+  if (typed.length >= REFERENCE.length && !isDone) {
+    finishSession(typed);
   }
 }
 
 // ── KEYSTROKE CAPTURE ────────────────────────────────────────
+//event saat tombol mulai ditekan
 area.addEventListener('keydown', (e) => {
-  if (isSubmitting) return; // kunci hanya saat proses kirim ke API sedang berlangsung
+  if (isDone) return;
   if (!isActive) startSession();
-
-  resetInactivityTimer(); // Mereset timer untuk mendeteksi waktu tidak aktif (idle)
-  pressMap[e.code] = performance.now(); // Menyimpan waktu saat tombol ditekan
+  
+  // Mereset timer untuk mendeteksi waktu tidak aktif (idle)
+  resetInactivityTimer();
+  // Menyimpan waktu saat tombol ditekan
+  pressMap[e.code] = performance.now();
 });
 
 // event saat tombol dilepas
 area.addEventListener('keyup', (e) => {
-  if (isSubmitting) return;
+  if (isDone) return;
   const t = performance.now();
 
   // Memastikan tombol sebelumnya telah tercatat saat keydown
   if (pressMap[e.code] !== undefined) {
     const holdTime = t - pressMap[e.code];
-    keystrokes.push({ // Menyimpan data keystroke ke dalam array
+    // Menyimpan data keystroke ke dalam array
+    keystrokes.push({
       key:         e.key,
       pressTime:   pressMap[e.code],
       releaseTime: t,
       holdTime:    holdTime
     });
-    delete pressMap[e.code];
+    delete pressMap[e.code]; // Membersihkan data sementara setelah Hold Time berhasil dihitung
     updateStats();
   }
-
   // Memperbarui tampilan teks referensi
-  updateReferenceDisplay(area.value);
-  checkCompletion(area.value);
+  renderReference(area.value);
 });
 
 //event saat isi area pengetikan berubah
 area.addEventListener('input', () => {
-  if (isSubmitting) return;
-  updateReferenceDisplay(area.value);
-  checkCompletion(area.value);
+
+  if (isDone) return;
+  const typed = area.value; // Mengambil teks yang sedang diketik pengguna
+  const refEl = document.getElementById('refText'); // Mengambil elemen teks referensi
+  let html = '';
+  for (let i = 0; i < REFERENCE.length; i++) {
+    // Mengubah spasi menjadi karakter HTML agar tetap terlihat
+    const ch = REFERENCE[i] === ' ' ? '&nbsp;' : REFERENCE[i];
+    if (i < typed.length) {
+      // Memberi warna sesuai hasil perbandingan karakter
+      html += `<span class="ref-char ${typed[i] === REFERENCE[i] ? 'correct' : 'wrong'}">${ch}</span>`;
+    } else if (i === typed.length) {
+      // Menandai posisi karakter berikutnya yang harus diketik
+      html += `<span class="ref-char current">${ch}</span>`;
+    } else {
+       // Menampilkan karakter yang belum diketik
+      html += `<span class="ref-char">${ch}</span>`;
+    }
+  }
+  refEl.innerHTML = html;
+
+  // Memperbarui progress bar berdasarkan jumlah karakter yang telah diketik
+  document.getElementById('progressBar').style.width =
+    Math.min(100, (typed.length / REFERENCE.length) * 100) + '%';
+  const cp = document.getElementById('charProgress');
+  if (cp) cp.textContent = Math.min(typed.length, REFERENCE.length);
 });
 
 // ── PELACAK INAKTIVITAS ──────────────────────────────────────
 function resetInactivityTimer() {
-  if (inactivityStart !== null) {
+  if (inactivityStart !== null) { //durasi idle dihitung ketika mulai mengatik
     totalInactMs   += performance.now() - inactivityStart;
     inactivityStart = null;
   }
-  clearTimeout(inactivityTimer);
+  clearTimeout(inactivityTimer); //timer lama dibatalkan
   inactivityTimer = setTimeout(() => {
     inactivityStart = performance.now();
   }, IDLE_THRESHOLD);
@@ -144,15 +162,9 @@ function startSession() {
   document.getElementById('statusText').textContent = 'Merekam ketikan...';
 }
 
-// ── KLIK TOMBOL "CEK HASIL" ──────────────────────────────────
-function finishTyping() {
-  if (!isComplete || isSubmitting) return; // safety, seharusnya tombol sudah disabled
-  finishSession(area.value);
-}
-
-// ── PROSES ANALISIS (dipicu oleh klik tombol, bukan otomatis) ──
+// ── SELESAI MENGETIK ─────────────────────────────────────────
 function finishSession(typed) {
-  isSubmitting = true;
+  isDone = true;
   clearTimeout(inactivityTimer);
 
   // Hitung sisa inaktif jika masih berjalan
@@ -165,13 +177,8 @@ function finishSession(typed) {
   document.getElementById('statusText').textContent = 'Menganalisis...';
   document.getElementById('statusDot').classList.remove('active');
 
-  const btn = document.getElementById('btnResult');
-  if (btn) btn.disabled = true;
-
   if (keystrokes.length < 10) {
     document.getElementById('statusText').textContent = 'Data terlalu sedikit';
-    isSubmitting = false;
-    if (btn) btn.disabled = !isComplete;
     return;
   }
 
@@ -184,18 +191,25 @@ function finishSession(typed) {
   }
   const acc = Math.round((correct / REFERENCE.length) * 100);
 
+  updateStats();
+
   // Simpan ke sessionStorage
   sessionStorage.setItem('stressFeatures', JSON.stringify(features));
   sessionStorage.setItem('stressConfidence', acc);
   sessionStorage.setItem('sessionTime', new Date().toISOString());
 
-  // Kirim ke API, lalu pindah ke halaman hasil
+  // Kirim ke API lalu aktifkan tombol
   (async () => {
     const result = await classifyStress(features);
     sessionStorage.setItem('stressResult', JSON.stringify(result));
     document.getElementById('statusText').textContent =
       'Selesai — ' + result.stress;
-    goToResult();
+
+    const btn = document.getElementById('btnResult');
+    if (btn) {
+      btn.disabled    = false;
+      btn.textContent = 'Cek Hasil →';
+    }
   })();
 }
 
@@ -204,31 +218,35 @@ function goToResult() {
   window.location.href = 'Result.html';
 }
 
+function finishTyping() { goToResult(); }
+
 // ── EKSTRAKSI FITUR ───────────────────────────────────────────
-// Fitur sesuai FEATURE_COLS di notebook
 function extractFeatures(buf) {
   // Hold time dari pressTime & releaseTime
+  // Mengambil seluruh nilai Hold Time yang valid (0–2000 ms)
   const holds = buf.map(k => k.holdTime).filter(h => h > 0 && h < 2000);
 
-  // Flight time: jeda antar ketukan
+  // Flight time (selisih waktu antar penekanan tombol)
   const flights = [];
   for (let i = 1; i < buf.length; i++) {
     const f = buf[i].pressTime - buf[i-1].pressTime;
-    if (f > 0 && f < 5000) flights.push(f);
+    if (f > 0 && f < 5000) flights.push(f); // Hanya menyimpan nilai Flight Time yang valid
   }
 
-  // Menghitung rata-rata dan std hold time
+  // Menghitung rata-rata dan standar deviasi Hold Time
   const holdMean   = mean(holds);
   const holdStd    = std(holds);
 
-  // Menghitung rata-rata dan std flight time
+  // Menghitung rata-rata dan standar deviasi Flight Time
   const flightMean = flights.length ? mean(flights) : 0;
   const flightStd  = flights.length ? std(flights)  : 0;
 
-  // Jumlah seluruh penekanan tombol
-  const keyCount       = buf.length; // Menghitung jumlah tombol Backspace
+  // Menghitung jumlah seluruh penekanan tombol
+  const keyCount       = buf.length;
+
+  // Menghitung jumlah tombol Backspace
   const backspaceCount = buf.filter(k => k.key === 'Backspace').length;
-  const backspaceRatio = keyCount > 0 ? backspaceCount / keyCount : 0;
+  const backspaceRatio = keyCount > 0 ? backspaceCount / keyCount : 0;   // Menghitung rasio penggunaan Backspace
 
   // total_inact_duration dikirim dalam MILIDETIK (ms), sesuai satuan saat training
   const totalInactDurationMs = totalInactMs;
@@ -252,7 +270,8 @@ function extractFeatures(buf) {
 
 // ── KLASIFIKASI — FETCH KE FLASK API ─────────────────────────
 async function classifyStress(features) {
-  const payload = { // menyusun sesuai urutan fitur model
+  // Menyusun payload sesuai urutan fitur model SVM
+  const payload = {
     total_keystrokes:     features.total_keystrokes,
     backspace_count:      features.backspace_count,
     backspace_ratio:      features.backspace_ratio,
@@ -264,20 +283,22 @@ async function classifyStress(features) {
     Daylight_Encoded:     features.Daylight_Encoded
   };
 
-  try { // kirim ke flask
+  try {
+    // Mengirim data fitur ke API Flask
     const response = await fetch('http://localhost:5000/predict', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload)
     });
 
-    // tampilkan error jika gagal
-    if (!response.ok) {
-      throw new Error("Backend Error");
-    }
-
+    // Menampilkan error jika backend gagal merespons
+    if(!response.ok){
+    throw new Error("Backend Error");
+    } 
+    
     const result = await response.json();
-    return result; // Backend mengembalikan: stress: 'Stres'/'Tidak Stres', probability: 0.xx% 
+    // Backend mengembalikan: { stress: 'Stres'/'Tidak Stres', probability: 0.xx }
+    return result;
 
   } catch (err) {
     console.error('Gagal menghubungi backend:', err);
@@ -290,9 +311,9 @@ async function classifyStress(features) {
 // ── FALLBACK RULE-BASED (jika API offline) ───────────────────
 function classifyStressFallback(f) {
   let score = 0;
-  if (f.backspace_ratio > 0.08)         score += 2; // banyak koreksi
-  if (f.hold_time_mean < 80)            score += 1; // terlalu cepat menekan
-  if (f.total_inact_duration > 30000)   score += 1; // >30 detik (dalam ms), sering berhenti
+  if (f.backspace_ratio > 0.08)      score += 2; // banyak koreksi
+  if (f.hold_time_mean < 80)         score += 1; // terlalu cepat menekan
+  if (f.total_inact_duration > 30)   score += 1; // sering berhenti
   return score >= 3 ? 'Stres' : 'Tidak Stres';
 }
 
@@ -306,49 +327,53 @@ function getDaylightValue() {
 }
 
 // ── STATISTIK REAL-TIME ──────────────────────────────────────
+// Label chip disesuaikan dengan fitur model yang aktual
 function updateStats() {
-  const n = keystrokes.length;
+  const n = keystrokes.length; // mnghitung jumlah ketukan
   document.getElementById('keyCount').textContent = n;
   if (n < 2) return;
 
+  const holds = keystrokes.map(k => k.holdTime); // Mengambil seluruh Hold Time
+
   // Menghitung rata-rata dan standar deviasi Hold Time
-  const holds = keystrokes.map(k => k.holdTime);
   const holdAvgMs = mean(holds);
   const holdStd = std(holds);
 
-  // Menghitung rata-rata dan standar deviasi Flight Time
+  // Menghitung rata-rata dan standar deviasi Hold Time
   const flights = [];
   for (let i = 1; i < keystrokes.length; i++) {
     const f = keystrokes[i].pressTime - keystrokes[i - 1].pressTime;
     if (f > 0 && f < 5000) {
-      flights.push(f);
+        flights.push(f);
     }
   }
 
+  // Menghitung rata-rata dan standar deviasi Flight Time
   const flightAvgMs = flights.length ? mean(flights) : 0;
   const flightStd = flights.length ? std(flights) : 0;
 
+  // Menghitung jumlah penggunaan Backspace
+  const bsCount  = keystrokes.filter(k => k.key === 'Backspace').length;
   const inactSec = (totalInactMs / 1000).toFixed(1); // ubah waktu tidak aktif dari ms ke detik
 
   // Stat-chip bawah textarea
-  document.getElementById('holdAvg').textContent    = Math.round(holdAvgMs);
-  document.getElementById('flightAvg').textContent  = Math.round(flightAvgMs);
+  document.getElementById('holdAvg').textContent    = Math.round(holdAvgMs);   // Hold Time (ms)
+  document.getElementById('flightAvg').textContent  = Math.round(flightAvgMs); // Flight Time (ms)
 
   // Mengambil elemen HTML berdasarkan id
-  const mHold      = document.getElementById('mHold');
-  const mFlight    = document.getElementById('mFlight');
-  const mHoldStd   = document.getElementById('mHoldStd');
-  const mFlightStd = document.getElementById('mFlightStd');
-  const mVar       = document.getElementById('mVar');
-  const mInact     = document.getElementById('mInact');
+  const mHold    = document.getElementById('mHold');
+  const mFlight  = document.getElementById('mFlight');
+  const mHoldStd = document.getElementById('mHoldStd');
+  const mFlightStd = document.getElementById("mFlightStd");
+  const mVar     = document.getElementById('mVar');
+  const mInact   = document.getElementById('mInact');
 
-  // Menampilkan metrik masing-masing fitur
-  if (mHold)      mHold.innerHTML      = `${Math.round(holdAvgMs)}<span class="metric-unit">ms</span>`;
-  if (mFlight)    mFlight.innerHTML    = `${Math.round(flightAvgMs)}<span class="metric-unit">ms</span>`;
-  if (mHoldStd)   mHoldStd.innerHTML   = `${holdStd.toFixed(1)}<span class="metric-unit">ms</span>`;
-  if (mFlightStd) mFlightStd.innerHTML = `${flightStd.toFixed(1)}<span class="metric-unit">ms</span>`;
-  if (mVar)       mVar.textContent     = n;
-  if (mInact)     mInact.innerHTML     = `${inactSec}<span class="metric-unit">dtk</span>`;
+  if (mHold)    mHold.innerHTML    = `${Math.round(holdAvgMs)}<span class="metric-unit">ms</span>`; // Menampilkan rata-rata Hold Time (ms)
+  if (mFlight)  mFlight.innerHTML  = `${Math.round(flightAvgMs)}<span class="metric-unit">ms</span>`; // rata rata flight time
+  if (mHoldStd) mHoldStd.innerHTML = `${holdStd.toFixed(1)}<span class="metric-unit">ms</span>`; // std Hold Time
+  if (mFlightStd) mFlightStd.innerHTML = `${flightStd.toFixed(1)}<span class="metric-unit">ms</span>`; // std Flight time
+  if (mVar)     mVar.textContent   = n; //jumlah total penekanan tombol (keystroke)
+  if (mInact)   mInact.innerHTML   = `${inactSec}<span class="metric-unit">dtk</span>`; // total durasi tidak aktif (idle time) dalam detik
 }
 
 // ── UTILS ────────────────────────────────────────────────────
@@ -360,6 +385,6 @@ function mean(arr) {
 // Menghitung standar deviasi dari sebuah array
 function std(arr) {
   if (arr.length < 2) return 0;
-  const m = mean(arr); // Hitung nilai rata-rata
+  const m = mean(arr);  // Hitung nilai rata-rata
   return Math.sqrt(arr.reduce((s, x) => s + (x - m) ** 2, 0) / arr.length); // Hitung standar deviasi
 }

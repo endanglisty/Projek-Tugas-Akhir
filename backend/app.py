@@ -50,11 +50,6 @@ def predict():
             return jsonify({
                 "error": f"{field} tidak ditemukan"
             }), 400
-
-    # if not data:
-    #     return jsonify({
-    #         "error": "Tidak ada data yang dikirim."
-    #     }), 400
     
     print("Data diterima")
     print(data)
