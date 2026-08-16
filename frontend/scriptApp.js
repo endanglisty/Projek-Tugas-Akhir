@@ -1,15 +1,10 @@
 // ── KONFIGURASI ──────────────────────────────────────────────
 const PARAGRAPHS = [
-  `Teknologi informasi mengubah cara manusia bekerja dan berkomunikasi tiap hari. Sistem komputer modern memproses data lebih cepat, sehingga mendukung aktivitas. Mahasiswa dituntut berpikir kritis, disiplin, dan bekerja sama, baik luring maupun daring.`,
-  `Perkembangan kecerdasan buatan (Artificial Intelligence), membantu manusia menyelesaikan pekerjaan lebih efisien. Namun, pengguna harus memahami etika, keamanan, dan privasi sebelum memanfaatkan teknologi, agar manfaatnya dirasakan bertanggung jawab.`,
-  `Keamanan informasi berperan penting dalam melindungi data pengguna. Gunakan kata sandi kuat, autentikasi dua faktor (2FA), lalu, biasakan logout setelah selesai menggunakan sistem. Langkah sederhana ini mengurangi risiko penyalahgunaan akun pengguna.`,
-  `Internet menjadi sarana utama mencari informasi, belajar, bekerja, dan berkomunikasi. Pengguna perlu membedakan informasi benar dari berita palsu (hoaks). Sikap kritis, teliti, serta bertanggung jawab membantu menciptakan lingkungan digitalnya sehat.`,
-  `Pemrograman komputer melatih kemampuan berpikir logis, sistematis, dan terstruktur. Setiap masalah dapat diselesaikan melalui analisis, penyusunan algoritma, implementasi program, hingga evaluasi hasilnya. Latihan konsisten meningkatkan kemampuannya.`,
-  `Mahasiswa tidak hanya membutuhkan kemampuan akademik, tetapi juga keterampilan komunikasi, kepemimpinan, dan kerja sama. Dunia kerja menghargai individu yang mampu beradaptasi, berpikir kritis, serta menyelesaikan masalah dengan efektif, sehari-hari.`,
-  `Aplikasi berbasis web semakin banyak digunakan karena dapat diakses melalui berbagai perangkat tanpa instalasi. Pengguna cukup membuka browser, memasukkan alamat situs, lalu melakukan login. Kemudahan ini, membuat layanan digital berkembang cepatnya.`,
-  `Analisis data menjadi kompetensi penting pada era digital. Informasi dari proses pengolahan data membantu pengambilan keputusan, lebih tepat. Kemampuan menggunakan Python, R, atau SQL memberikan nilai tambah, bagi mahasiswa maupun profesional bidang.`,
-  `Perkembangan teknologi komunikasi memungkinkan kolaborasi tanpa dibatasi jarak maupun waktu. Berbagai platform konferensi video, layanan penyimpanan awan (cloud), dan aplikasi pesan instan mempermudah koordinasi, pekerjaan diselesaikan lebih efektif.`,
-  `Kesehatan mental merupakan aspek penting dalam kehidupan. Aktivitas belajar atau bekerja terlalu padat dapat menyebabkan kelelahan dan stres. Oleh sebab itu, setiap orang perlu beristirahat, berolahraga, mengatur waktu, serta menjaga keseimbangannya.`
+  `Gambar tersebut muncul pada window yang berbeda sebab pada Open2ActionPerformed() objek baru dari kelas FormGambar menampilkan gambar ke window/form. Ukuran gambar diubah agar sesuai dengan lblGambar dan hasil resize dipasang pada komponen lblGambar.`,
+  `Engine: Game dikembangkan menggunakan Unity Engine dengan bahasa pemrograman C# sebagai bahasa utama dalam pembuatan logika permainan. Asset grafis yang digunakan berupa sprite 2D, sedangkan efek suara digunakan untuk meningkatkan pengalaman bermain.`,
+  `Implementasi karakter dilakukan menggunakan script PlayerMovement, untuk mengatur perpindahan player mulai dari melompat, berjalan, saat mendarat dari lompatan, dan menyerang. Serta PlayerAttack yang berfungsi untuk menggerakkan serangan bola player.`,
+  `Berdasarkan pengujian aplikasi Vigenere Cipher telah menjalankan proses enkripsi dan dekripsi sesuai dengan algoritma Vigenere Cipher. Saat ciphertext didekripsi key yang sama, program berhasil mengembalikan pesan menjadi "sistem keamanan informasi".`,
+  `ActionScript ini digunakan pada scene Quiz untuk mengontrol interaksi pengguna dalam menjawab soal. Sistem juga melakukan pengecekan jawaban dan menambahkan skor secara otomatis sebelum berpindah ke soal berikutnya melalui MovieClip(root).skor += 1;.`
 ];
 
 // Ambil paragraf yang tersimpan, atau pilih acak baru
@@ -150,7 +145,7 @@ function finishTyping() {
   finishSession(area.value);
 }
 
-// ── PROSES ANALISIS (dipicu oleh klik tombol, bukan otomatis) ──
+// ── PROSES ANALISIS (dipicu oleh klik tombol) ──
 function finishSession(typed) {
   isSubmitting = true;
   clearTimeout(inactivityTimer);
@@ -226,8 +221,8 @@ function extractFeatures(buf) {
   const flightStd  = flights.length ? std(flights)  : 0;
 
   // Jumlah seluruh penekanan tombol
-  const keyCount       = buf.length; // Menghitung jumlah tombol Backspace
-  const backspaceCount = buf.filter(k => k.key === 'Backspace').length;
+  const keyCount       = buf.length; 
+  const backspaceCount = buf.filter(k => k.key === 'Backspace').length; // Menghitung jumlah tombol Backspace
   const backspaceRatio = keyCount > 0 ? backspaceCount / keyCount : 0;
 
   // total_inact_duration dikirim dalam MILIDETIK (ms), sesuai satuan saat training
@@ -265,11 +260,23 @@ async function classifyStress(features) {
   };
 
   try { // kirim ke flask
+    const startTime = performance.now(); //ukur waktu mulai sistem
+
     const response = await fetch('http://localhost:5000/predict', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload)
     });
+
+    const endTime = performance.now(); //ukur akhir waktu sistem
+    const predictionTime = endTime - startTime;  //prediksi waktu per sesi
+
+    // tampilkan pesan
+    console.log(
+        "Waktu respons prediksi:",
+        predictionTime.toFixed(2),
+        "ms"
+    );
 
     // tampilkan error jika gagal
     if (!response.ok) {
