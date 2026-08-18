@@ -259,8 +259,9 @@ async function classifyStress(features) {
     Daylight_Encoded:     features.Daylight_Encoded
   };
 
+  const startTime = performance.now(); //ukur waktu mulai sistem
   try { // kirim ke flask
-    const startTime = performance.now(); //ukur waktu mulai sistem
+    console.log("Mulai mengirim request...");
 
     const response = await fetch('http://localhost:5000/predict', {
       method:  'POST',
@@ -271,6 +272,7 @@ async function classifyStress(features) {
     const endTime = performance.now(); //ukur akhir waktu sistem
     const predictionTime = endTime - startTime;  //prediksi waktu per sesi
 
+    console.log("Response diterima:", response.status);
     // tampilkan pesan
     console.log(
         "Waktu respons prediksi:",
